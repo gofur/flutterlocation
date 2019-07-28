@@ -50,7 +50,35 @@
             self.clLocationManager = [[CLLocationManager alloc] init];
             self.clLocationManager.delegate = self;
             self.clLocationManager.desiredAccuracy = kCLLocationAccuracyBest;
+        }else{
+            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Location is Disabled"
+                                                            message:@"To use location, go to your Settings App > Privacy > Location Services."
+                                                           delegate:self
+                                                  cancelButtonTitle:@"Cancel"
+                                                  otherButtonTitles:@"OK", nil];
+            [alert show];
         }
+    }
+}
+
+-(void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
+    // the user clicked OK
+    if (buttonIndex == 1) {
+                    NSURL *url1 = [NSURL URLWithString:@"App-prefs:root=LOCATION_SERVICES"];
+                    NSURL *url2 = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                    if (@available(iOS 11.0, *)) {
+                        if ([[UIApplication sharedApplication] canOpenURL:url2]){
+                            [[UIApplication sharedApplication] openURL:url2 options:@{} completionHandler:nil];
+                        }
+                    } else {
+                        if ([[UIApplication sharedApplication] canOpenURL:url1]){
+                            if (@available(iOS 10.0, *)) {
+                                [[UIApplication sharedApplication] openURL:url1 options:@{} completionHandler:nil];
+                            } else {
+                                [[UIApplication sharedApplication] openURL:url1];
+                            }
+                        }
+                    }
     }
 }
 
@@ -77,11 +105,18 @@
     } else if ([call.method isEqualToString:@"getLocation"]) {
         if ([CLLocationManager authorizationStatus] == kCLAuthorizationStatusDenied && [CLLocationManager locationServicesEnabled])
         {
-            // Location services are requested but user has denied
-            result([FlutterError errorWithCode:@"PERMISSION_DENIED"
-                                   message:@"The user explicitly denied the use of location services for this app or location services are currently disabled in Settings."
-                                   details:nil]);
-            return;
+//            // Location services are requested but user has denied
+//            result([FlutterError errorWithCode:@"PERMISSION_DENIED"
+//                                   message:@"The user explicitly denied the use of location services for this app or location services are currently disabled in Settings."
+//                                   details:nil]);
+            
+            UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Location is Denied"
+                                                            message:@"To use location, go to your Settings App > Privacy > Location Services."
+                                                           delegate:self
+                                                  cancelButtonTitle:@"Cancel"
+                                                  otherButtonTitles:@"OK", nil];
+            [alert show];
+//            return;
         }
         
         self.flutterResult = result;
