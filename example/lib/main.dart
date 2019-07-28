@@ -1,8 +1,9 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:location/location.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:location/location.dart';
 
 //import 'config.dart';
 
@@ -21,7 +22,7 @@ class _MyAppState extends State<MyApp> {
 
   StreamSubscription<LocationData> _locationSubscription;
 
-  Location _locationService  = new Location();
+  Location _locationService = new Location();
   bool _permission = false;
   String error;
 
@@ -35,7 +36,7 @@ class _MyAppState extends State<MyApp> {
 
   CameraPosition _currentCameraPosition;
 
-  GoogleMap googleMap; 
+  GoogleMap googleMap;
 
   @override
   void initState() {
@@ -46,40 +47,45 @@ class _MyAppState extends State<MyApp> {
 
   // Platform messages are asynchronous, so we initialize in an async method.
   initPlatformState() async {
-    await _locationService.changeSettings(accuracy: LocationAccuracy.HIGH, interval: 1000);
-    
+    await _locationService.changeSettings(
+        accuracy: LocationAccuracy.HIGH, interval: 1000);
+
     LocationData location;
     // Platform messages may fail, so we use a try/catch PlatformException.
     try {
-      bool serviceStatus = await _locationService.serviceEnabled();
-      print("Service status: $serviceStatus");
-      if (serviceStatus) {
-        _permission = await _locationService.requestPermission();
-        print("Permission: $_permission");
-        if (_permission) {
-          location = await _locationService.getLocation();
+      bool requestStatus = await _locationService.requestService();
+      if (requestStatus) {
+        bool serviceStatus = await _locationService.serviceEnabled();
+        print("Service status: $serviceStatus");
+        if (serviceStatus) {
+          _permission = await _locationService.requestPermission();
+          print("Permission: $_permission");
+          if (_permission) {
+            location = await _locationService.getLocation();
 
-          _locationSubscription = _locationService.onLocationChanged().listen((LocationData result) async {
-            _currentCameraPosition = CameraPosition(
-              target: LatLng(result.latitude, result.longitude),
-              zoom: 16
-            );
+            _locationSubscription = _locationService
+                .onLocationChanged()
+                .listen((LocationData result) async {
+              _currentCameraPosition = CameraPosition(
+                  target: LatLng(result.latitude, result.longitude), zoom: 16);
 
-            final GoogleMapController controller = await _controller.future;
-            controller.animateCamera(CameraUpdate.newCameraPosition(_currentCameraPosition));            
+              final GoogleMapController controller = await _controller.future;
+              controller.animateCamera(
+                  CameraUpdate.newCameraPosition(_currentCameraPosition));
 
-            if(mounted){
-              setState(() {
-                _currentLocation = result;
-              });
-            }
-          });
-        }
-      } else {
-        bool serviceStatusResult = await _locationService.requestService();
-        print("Service status activated after request: $serviceStatusResult");
-        if(serviceStatusResult){
-          initPlatformState();
+              if (mounted) {
+                setState(() {
+                  _currentLocation = result;
+                });
+              }
+            });
+          }
+        } else {
+          bool serviceStatusResult = await _locationService.requestService();
+          print("Service status activated after request: $serviceStatusResult");
+          if (serviceStatusResult) {
+            initPlatformState();
+          }
         }
       }
     } on PlatformException catch (e) {
@@ -93,21 +99,26 @@ class _MyAppState extends State<MyApp> {
     }
 
     setState(() {
-        _startLocation = location;
+      _startLocation = location;
     });
-
   }
 
   slowRefresh() async {
     _locationSubscription.cancel();
-    await _locationService.changeSettings(accuracy: LocationAccuracy.BALANCED, interval: 10000);
-    _locationSubscription = _locationService.onLocationChanged().listen((LocationData result) {
-      if(mounted){
+    await _locationService.changeSettings(
+        accuracy: LocationAccuracy.BALANCED, interval: 10000);
+    _locationSubscription =
+        _locationService.onLocationChanged().listen((LocationData result) {
+      if (mounted) {
         setState(() {
           _currentLocation = result;
         });
       }
     });
+  }
+
+  requestService() async {
+    initPlatformState();
   }
 
   @override
@@ -123,16 +134,11 @@ class _MyAppState extends State<MyApp> {
       },
     );
 
-
     widgets = [
       Center(
-          child: SizedBox(
-            height: 300.0,
-            child: googleMap
-          ),
+        child: SizedBox(height: 300.0, child: googleMap),
       ),
     ];
-    
 
     widgets.add(new Center(
         child: new Text(_startLocation != null
@@ -140,39 +146,42 @@ class _MyAppState extends State<MyApp> {
             : 'Error: $error\n')));
 
     widgets.add(new Center(
-        child: new Text(_currentLocation != null
-            ? 'Continuous location: \nlat: ${_currentLocation.latitude} & long: ${_currentLocation.longitude} \nalt: ${_currentLocation.altitude}m\n'
-            : 'Error: $error\n', textAlign: TextAlign.center)));
+        child: new Text(
+            _currentLocation != null
+                ? 'Continuous location: \nlat: ${_currentLocation.latitude} & long: ${_currentLocation.longitude} \nalt: ${_currentLocation.altitude}m\n'
+                : 'Error: $error\n',
+            textAlign: TextAlign.center)));
 
     widgets.add(new Center(
-      child: new Text(_permission 
-            ? 'Has permission : Yes' 
-            : "Has permission : No")));
+        child: new Text(
+            _permission ? 'Has permission : Yes' : "Has permission : No")));
 
     widgets.add(new Center(
-      child: new RaisedButton(
-        child: new Text("Slow refresh rate and accuracy"),
-        onPressed: () => slowRefresh()
-      )
-    ));
+        child: new RaisedButton(
+            child: new Text("Slow refresh rate and accuracy"),
+            onPressed: () => slowRefresh())));
+
+    widgets.add(new Center(
+        child: new RaisedButton(
+            child: new Text("request service"),
+            onPressed: () => _locationService.getLocation())));
 
     return new MaterialApp(
         home: new Scaffold(
-            appBar: new AppBar(
-              title: new Text('Location plugin example app'),
-            ),
-            body: new Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: widgets,
-            ),
-            floatingActionButton: new FloatingActionButton(
-              onPressed: () => _locationSubscription.cancel(),
-              tooltip: 'Stop Track Location',
-              child: Icon(Icons.stop),
-            ),
-            floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        )
-      );
+      appBar: new AppBar(
+        title: new Text('Location plugin example app'),
+      ),
+      body: new Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: widgets,
+      ),
+      floatingActionButton: new FloatingActionButton(
+        onPressed: () => _locationSubscription.cancel(),
+        tooltip: 'Stop Track Location',
+        child: Icon(Icons.stop),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    ));
   }
 }
