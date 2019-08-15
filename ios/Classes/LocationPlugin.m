@@ -64,7 +64,8 @@
 -(void)alertView:(UIAlertView *)alertView didDismissWithButtonIndex:(NSInteger)buttonIndex {
     // the user clicked OK
     if (buttonIndex == 1) {
-                    NSURL *url1 = [NSURL URLWithString:@"App-prefs:root=LOCATION_SERVICES"];
+                    //NSURL *url1 = [NSURL URLWithString:@"App-prefs:root=LOCATION_SERVICES"];
+                    NSURL *url1 = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     NSURL *url2 = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
                     if (@available(iOS 11.0, *)) {
                         if ([[UIApplication sharedApplication] canOpenURL:url2]){
